@@ -1,0 +1,33 @@
+1.Material de la aplicación.
+
+El la carpeta princial exiten una serie de carpetas y una serie de archivos
+para poner en marcha la aplicación.
+
+El material se compone de una carpeta donde se incluirán las iniciativas, que 
+servirán de entrenamiento para los distintos clasificadores que querámos entrenar.
+Existe una carpeta donde preferiblemente se almacenarán los distintos modelos 
+creados a partir de los distintos clasificadores entrenados.
+Una carpeta con las imagenes de la aplicación, un archivo de instalación de las 
+dependencias (setup.py), el archivo principal de la aplicación (GuiClasificador-V3-5.py).
+
+2.Instalando la aplicacion
+
+Para realizar la instalación de todas las dependencias externas que usa
+la aplicación será necesario ejercutar el archivo "install.sh".
+
+Una vez instaladas las dependencias será necesario dar permisos de ejecución 
+al archivo "GuiClasificador-V4.py", esto lo podemos hacer 
+bien, desde el terminal:
+
+            sudo chmod +x GuiClasificador-V4.py
+            
+O bien, de manera gráfica accediendo a propiedades, permisos y 
+dando permisos de ejecución.
+
+Para iniciar la aplicación se puede bien; clicar encima de ella
+e indicando la opción run o run desde terminal, o bien; desde el terminal 
+introduciendo;
+
+        ./GuiClasificador-V3-5.py
+
+

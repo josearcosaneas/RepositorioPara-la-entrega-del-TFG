@@ -1,0 +1,13 @@
+resumenRForest	resumenRForest-module.html
+resumenRForest.clasificador	resumenRForest-module.html#clasificador
+resumenRForest.direccionTest	resumenRForest-module.html#direccionTest
+resumenRForest.direccionEntrenamiento	resumenRForest-module.html#direccionEntrenamiento
+resumenRForest.Clasificador	resumenRForest.Clasificador-class.html
+resumenRForest.Clasificador.GeneraTarget	resumenRForest.Clasificador-class.html#GeneraTarget
+resumenRForest.Clasificador.transformaMaterias	resumenRForest.Clasificador-class.html#transformaMaterias
+resumenRForest.Clasificador.clasificador	resumenRForest.Clasificador-class.html#clasificador
+resumenRForest.Clasificador.leerTags	resumenRForest.Clasificador-class.html#leerTags
+resumenRForest.Clasificador.PreparaMaterias	resumenRForest.Clasificador-class.html#PreparaMaterias
+resumenRForest.Clasificador.Replace	resumenRForest.Clasificador-class.html#Replace
+resumenRForest.Clasificador.resumir	resumenRForest.Clasificador-class.html#resumir
+resumenRForest.Clasificador.__main__	resumenRForest.Clasificador-class.html#__main__
