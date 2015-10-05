@@ -22,6 +22,12 @@ from sklearn import preprocessing
 from subprocess import call
 from nltk.corpus import stopwords
 from nltk import word_tokenize
+# Esto se incluye para poder guardar string o datos tipo ASCII dentro de un 
+# fichero XML y que no devuelva error en consola
+import sys
+reload(sys)
+sys.setdefaultencoding("utf-8")
+
 
 APP_TITLE = "Ayuda Clasificador Automático"
 MENU_ABOUT = "&Acerca de"
@@ -254,7 +260,7 @@ class VentanaEntrenar(wx.Frame):
         global _selectedDirEntrenamiento 
         
         userPath = ''
-        app = wx.App()
+#        app = wx.App()
         dialog = wx.DirDialog(None, "Por favor eliga un directorio para entrenamiento:",\
             style=1 ,defaultPath=userPath, pos = (10,10))
         if dialog.ShowModal() == wx.ID_OK:
@@ -262,7 +268,7 @@ class VentanaEntrenar(wx.Frame):
             print _selectedDirEntrenamiento
             pathModelo =""            
             for i in range(1, len(_selectedDirEntrenamiento.split("/"))-1):
-                pathModelo = pathModelo +"/"+_seletedDirEntrenamiento.split("/")[i]
+                pathModelo = pathModelo +"/"+_selectedDirEntrenamiento.split("/")[i]
             
             pathModelo = pathModelo +"/modeloClases.txt"
             print pathModelo
@@ -270,8 +276,8 @@ class VentanaEntrenar(wx.Frame):
             f.write(_selectedDirEntrenamiento)
             f.close()
             return _selectedDirEntrenamiento
-        else:
-            app.skip()
+#        else:
+#            app.skip()
     
     def cerrar(self, evt):
           
@@ -283,6 +289,7 @@ class VentanaEntrenar(wx.Frame):
         self.Close()
     
     def botonClickGuardarModelo(self,evt):
+#        app = wx.App()
         ventana = wx.FileDialog(None, message="Salvar como",
                                 defaultDir=os.getcwd(),defaultFile="",wildcard = '*.*',
         style=wx.SAVE| wx.CHANGE_DIR)
@@ -291,11 +298,11 @@ class VentanaEntrenar(wx.Frame):
             f = open(self.fichero,"w")
             f.write(self.modelo)
             f.close()
-            print "EL ARCHIVO A SIDO GUARDADO CON EXITO"
+            print "EL ARCHIVO HA SIDO GUARDADO CON EXITO"
         ############################################
         else: self.fichero = None
         # Destruimos el diálogo.
-        ventana.Close()
+#        ventana.Close()
 
 """
 La siguiente clase implementa la ventana principal.
@@ -380,23 +387,20 @@ def transformaMaterias(materiasF):
     materiasF=materiasF[0].split(",")
     for i in range (1,len(materiasF)):  
     
-        nuevo=str(materiasF[i])
+        nuevo=materiasF[i]
         #nuevo=self.Replace(nuevo)
         label.append(nuevo)
     
     return label 
     
 def tokenize(resultList1):
-    entrada=[]
+    salida = ''
     tokens = word_tokenize(resultList1)
-    filtered_words = [w for w in tokens if not w in stopwords.words('spanish')]
-
-
+    filtered_words = [w for w in tokens  if not w in [',','.',';',':','a','y','ha','ante','bajo','cabe' ,'con','contra','de','desde','en','entre','hacia','hasta','para','por','según','sin','so','sobre','tras' ,'durante','mediante','excepto','salvo','incluso','más','menos']]
+  
     for i in filtered_words:
-        stri = unicode(i,errors='replace')
-        entrada.append(stri)
-
-    return entrada 
+        salida= salida + ' ' + i
+    return salida
     
 def PreparaMaterias(materias):
     materiasTrain = []
@@ -449,7 +453,7 @@ class VentanaEntrenado(wx.Frame):
     """
     def ClickBotonClasificar(self, evt):
         self.MakeModal(True)
-        global _resultados
+
 
         extractoT=[]
         materiasE=[]
@@ -473,23 +477,24 @@ class VentanaEntrenado(wx.Frame):
             extractoTs.append(extrac)
             parrafos = leerTags(path,'parrafo')
             todo=""
+            
+            
             for i in range(0,len(parrafos)):
-                todo = todo +" "+str(parrafos[i])    
+                todo = todo +" "+parrafos[i]
+            todo = resumir(todo,ratio=0.25)    
             try:
 
-                todo = resumir(todo,ratio=0.25)
+                
                 todo= tokenize(todo) 
-            
-                final = ""    
-                for i in range(0, len (todo)):
-                    final = final+" "+str(todo[i])    
-                final =str(final)
-                resumenes.append(final)
-                todo = extrac+ " " + final
-                extractoT.append(todo)
             except ValueError:
                 print "error el archivo: "+ path +"No se puede resumir probablemante porque este vacio. "  
-                
+                            
+            final = ""    
+
+            resumenes.append(todo)
+            final = extrac+ " " + todo
+            extractoT.append(final)
+
         ficherosE = os.listdir(_selectedDirEntrenamiento)
         
         for i in ficherosE:
@@ -509,7 +514,6 @@ class VentanaEntrenado(wx.Frame):
         print len (iniciativasTest)
         contenido=Resultados()
         contenidoRestante = Resultados()
-        contenidoEtiRestantes=[]
         for i in range(0,len(iniciativasTest)):
             
             auxEti = []
@@ -518,24 +522,34 @@ class VentanaEntrenado(wx.Frame):
             auxProbaMenos = []
             for j in range (0, len(list(classifier.classes_))):
                 label= lb.classes_[j]
-                #nlabel= classifier2.classes_[j]
+  
                 prob=probabilidad[i][j]
-                if prob > 0.027:             
+                ############################################
+                # Clases con alta probabilidad de pertenecer
+                # a la iniciativa
+                ############################################
+                if prob >= 0.027:             
                     auxProba.append(str(prob))
-                    auxEti.append(str(label))
+                    auxEti.append(label)
+                ############################################
+                # Clases con menos probabilidad de pertenecer
+                # a la iniciativa
+                ############################################
                 if prob < 0.027:
-                    auxEtiqMenos.append(str(label))
+                    auxEtiqMenos.append(label)
                     auxProbaMenos.append(str(prob))
-                    
+            ##################################################################
+            # Almaceno las etiquetas con mas probabilidad en un elemento 
+            # de tipo Resultado, almaceno tanto probabilidades como 
+            # etiquetas
+            ##################################################################
             contenido.etiquetas.append(auxEti) # Etiquetas preseleccionadas con mas probabilidad de salir
             contenido.probabilidades.append(auxProba)
+            ##################################################################
+            # idem de los anterior pero con las que tienen menos probabilidad 
+            ##################################################################            
             contenidoRestante.etiquetas.append(auxEtiqMenos)
             contenidoRestante.probabilidades.append(auxProbaMenos)
-
-
-            contenidoEtiRestantes.append(auxEtiqMenos) # El resto de las seleccionadas con menos probabilidad de salir.
-        print "FIN"
-        _resultados = contenido
         
         #len contenido .etiquetas es el numero de iniciativas predecidas
         for i in range(0,len(contenido.etiquetas)):
@@ -546,26 +560,74 @@ class VentanaEntrenado(wx.Frame):
              ventana = Frame(root,background="#DEDFD7")   
              ventana.pack()      
              etiquetasElegidas = []   
+             
+             
+             ConOrdenado = {}
+             ResOrdenado = {}            
+             for k in range(0, len (contenido.etiquetas[i])):                 
+                 ConOrdenado[str(contenido.probabilidades[i][k])] = contenido.etiquetas[i][k]
+             for k in range(0, len(contenidoRestante.etiquetas[i])):
+                 ResOrdenado[str(contenidoRestante.probabilidades[i][k])]= contenidoRestante.etiquetas[i][k]
+                 
+             mas = ConOrdenado.items()
+
+             mas.sort()
+             mas.reverse()
+
+             menos = ResOrdenado.items()
+             menos.sort()
+             menos.reverse() 
+             
+
+             eleccionesBuenas = []
+             for t in range(0,len(ConOrdenado.items())):
+                 eleccionesBuenas.append(mas[t][1])
+             print eleccionesBuenas   
+             eleccionesMenosBuenas = []
+             for t in range(0,len(ResOrdenado.items())):
+                 eleccionesMenosBuenas.append(menos[t][1])
+                                      
+             ##############################################################
+             # Funcion de guardado de materias seleccionadas por el usuario
+             ##############################################################
              def Guardar(): 
+                 
                   lista= (list(lng.state()))
                   for j in range (0,len(lista)):
                        if lista[j]==1:
-                            etiquetasElegidas.append( contenido.etiquetas[i][j])
+                            etiquetasElegidas.append( eleccionesBuenas[j])
+
+                  lista2= (list(lng2.state()))
+                  for j in range (0,len(lista2)):
+                      if lista2[j]==1:
+                          etiquetasElegidas.append(eleccionesMenosBuenas[j])
+
+                  listaString="" 
+                  
                   listaString= (str(etiquetasElegidas[0])) 
+                  
                   if len(etiquetasElegidas)>1:
                       for k in range (1,len(etiquetasElegidas)):
                           listaString= listaString + ","+(str(etiquetasElegidas[k]))
+
                   print "materias a guardar"
                   print listaString
+
                   xmlFile = parse(pathsTest[i])  
+                  iniciativa = xmlFile.getElementsByTagName('iniciativa')[0]   
+                  epigrafe = iniciativa.getElementsByTagName('numero_expediente')
                   tagMaterias = xmlFile.createElement("materias")
-                  print "creado elemento materias"
-                  tagMaterias.setAttribute("materias"  , listaString)
-                  xmlFile.childNodes[0].appendChild( tagMaterias )
+                  tagMaterias.appendChild(xmlFile.createTextNode(listaString))
+                  iniciativa.insertBefore(tagMaterias,epigrafe[0])
+#                  xmlFile.childNodes[0].appendChild( tagMaterias )
+                  ###  Aqui se produce un error al intentar guardarlo dentro del XML
                   with open(pathsTest[i],'w') as f:
                       f.write(xmlFile.toprettyxml())                    
-                  
-                  
+                  listaString=""
+
+             ##############################################################
+             # Funcion para visualizar la iniciativa en Firefox
+             ##############################################################                    
              def visualizarIniciativa():
                    call("firefox"+" "+str(pathsTest[i]), shell=True)    
             
@@ -586,40 +648,22 @@ class VentanaEntrenado(wx.Frame):
              text2.pack(side=TOP,expand=False)
              labelList1 = Label(ventana, text ="Elecciones con alta probabilidad de ser elegidas",font=("Helvetica", 16),fg="black",background="#DEDFD7")
              labelList1.pack(padx=0, pady=10,side=TOP)
-             ConOrdenado = {}
-             ResOrdenado = {}            
-             for k in range(0, len (contenido.etiquetas[i])):                 
-                 ConOrdenado[str(contenido.probabilidades[i][k])] = contenido.etiquetas[i][k]
-             for k in range(0, len(contenidoRestante.etiquetas[i])):
-                 ResOrdenado[str(contenidoRestante.probabilidades[i][k])]= contenidoRestante.etiquetas[i][k]
-             
-
-             mas = ConOrdenado.items()
-             menos = ResOrdenado.items()
-             mas.sort()
-             menos.sort()
-             mas.reverse()
-             menos.reverse()
-             
-
-
-             eleccionesBuenas = []
-             for t in range(0,len(ConOrdenado.items())):
-                 eleccionesBuenas.append(mas[t][1])
-                 
-             eleccionesMenosBuenas = []
-             for t in range(0,len(ResOrdenado.items())):
-                 eleccionesMenosBuenas.append(menos[t][1])
-                         
+             #######################################################
+             # Activamos los checksbar de las materias con mas y 
+             # menos probabilidades de ser elegidas .
+             #######################################################                        
              lng = Checkbar(ventana,eleccionesBuenas)
              lng.pack(side=TOP, fill=X)
              lng.config(relief=GROOVE, bd=2)
+             
              labelList2 = Label(ventana, text = "Resto de posibles materias con que etiquetar la iniciativa",font=("Helvetica", 16),fg="black",background="#DEDFD7")
              labelList2.pack(padx=0, pady=10,side=TOP)
 
              lng2 = CheckBarListScroll(ventana,eleccionesMenosBuenas)
              lng2.pack(side="top", fill="x", expand=False)
              lng2.config(relief=GROOVE, bd=2)
+             
+             
              Button(ventana,text='Visualizar Iniciativa',background="#C1C4B5", command= visualizarIniciativa).pack(side=RIGHT)
              Button(ventana, text='Guardar' ,background="#C1C4B5",command=Guardar).pack(side=RIGHT)
              if i == len(iniciativasTest)-1:
@@ -635,7 +679,7 @@ class VentanaEntrenado(wx.Frame):
 
         
         userPath = ''
-        app = wx.App()
+#        app = wx.App()
         dialog = wx.DirDialog(None, "Por favor elija un directorio para clasificar:",\
             style=1 ,defaultPath=userPath, pos = (10,10))
         if dialog.ShowModal() == wx.ID_OK:
@@ -646,7 +690,7 @@ class VentanaEntrenado(wx.Frame):
                 pathModelo = pathModelo +"/"+_selectedDirClasificacion.split("/")[i]
             pathModelo = pathModelo+"/modeloClases.txt"
             global _selectedDirEntrenamiento
-            print pathModelo
+#            print pathModelo
             f = open(str(pathModelo),"r")
             
             _selectedDirEntrenamiento = f.readline()
@@ -654,23 +698,20 @@ class VentanaEntrenado(wx.Frame):
             _selectedDirEntrenamiento = _selectedDirEntrenamiento.strip()            
                 
             return _selectedDirClasificacion
-        else:
-            app.Close()
+#        else:
+#            app.Close()
             
     def ClickElegirModelo(self, evt):
         
         global _selectedDirModelo 
-        
-        app = wx.App()
+
         dialog = wx.FileDialog(None, "Por favor eliga un directorio para clasificar:",\
             style=1 , pos = (10,10))
         if dialog.ShowModal() == wx.ID_OK:
             _selectedDirModelo = dialog.GetPath()
-            print _selectedDirModelo
+#            print _selectedDirModelo
             return _selectedDirModelo
-        else:
-            app.Destroy()    
-   
+
     def cerrar(self, evt):
           
         self.MakeModal(False)
@@ -765,14 +806,14 @@ class Clasificador():
             for i in range(0,len(parrafos)):
                 todo = todo +" "+str(parrafos[i])    
             try:
-        #        resumir(todo)
+
                 todo = resumir(todo,ratio=0.25)
                 todo= tokenize(todo) 
             
                 final = ""    
-                for i in range(0, len (todo)):
-                    final = final+" "+str(todo[i])    
-                final =str(final) 
+
+                final = extr+" "+str(todo)    
+
                 extractoE.append(final)
             except ValueError:
                 print "error el archivo: "+ path +"No se puede resumir probablemante porque este vacio. "
@@ -795,17 +836,15 @@ class Clasificador():
                 todo= tokenize(todo) 
             
                 final = ""    
-                for i in range(0, len (todo)):
-                    final = final+" "+str(todo[i])    
-                final =str(final) 
+                
+                final = extr+" "+str(todo)    
+                
                 extractoT.append(final)
                 
             except ValueError:
                 print "error el archivo: "+ path +"No se puede resumir probablemante porque este vacio. "
               
         ############################################################################
-        #y_test = PreparaMaterias(materiasT)
-   
         y_test = self.PreparaMaterias(materiasT)
         y_train = self.PreparaMaterias(materiasE)
         iniciativasTraining = np.array(extractoE)
@@ -850,7 +889,7 @@ class Clasificador():
                     materiasF.append(materias[i][j])
         label=[]
         for i in range (1,len(materiasF)):    
-            nuevo=str(materiasF[i])
+            nuevo=materiasF[i]
             nuevo=self.Replace(nuevo)
             #print nuevo
             label.append(nuevo)
@@ -869,8 +908,6 @@ class Clasificador():
                 resultList1.extend([elements[i].childNodes[0].nodeValue])
         return resultList1
     
-
-
     """
     summarizer.summarize(texto,lenguaje,ratio,words)
     """    
@@ -880,7 +917,7 @@ class Clasificador():
         else:
             return summarizer.summarize(texto, language=lenguaje)
 
-    ############################################################################
+    ###########################################################################
     ############################################################################  
     
     def entrenar (self,direccionEntrenamiento):
@@ -889,52 +926,32 @@ class Clasificador():
         materiasE = []
         extractoE = []
 
-
-#        resumenes = []
-        # Leemos los de entrenamiento
         print "LEYENDO INICIATIVAS"
         for i in ficherosE:
             path=direccionEntrenamiento+"/"+i
             materiasE.append(self.leerTags(path,'materias'))
             
             extracto = self.leerTags(path,'extracto')
-            extrac= str(extracto)##############################
+            extrac= extracto##############################
             #extractoE.append(todo)
             parrafos = leerTags(path,'parrafo')
             todo=""
-            
             for i in range(0,len(parrafos)):
-                todo = todo +" "+str(parrafos[i])    
-            try:
-        #        resumir(todo)
-                todo = resumir(todo,ratio=0.25)
-                todo= tokenize(todo) 
+                todo = todo +" "+parrafos[i]
+                
             
-                final = ""    
-                for i in range(0, len (todo)):
-                    final = final+" "+str(todo[i])    
-                final =str(final)##remune#######################################
-                #resumenes.append(final)
-           
-            except ValueError:
-                print "error el archivo: "+ path +"No se puede resumir probablemante porque este vacio. " 
-            
-            aux=extrac + final
+            todo = resumir(todo,ratio=0.25)
+            todo = tokenize(todo)
+                
+            aux=str(extrac) + todo
             extractoE.append(aux)
         print "FIN DE LA LECTURA DE INICIATIVAS"  
-            
-        ############################################################################
-
-        ############################################################################
-        #y_test = PreparaMaterias(materiasT)
-   
+               
         y_train = self.PreparaMaterias(materiasE)
         X_train = np.array(extractoE)
         
-        
-        
         lb = preprocessing.MultiLabelBinarizer()
-
+        
         y_train = lb.fit_transform(y_train)
         
         classifier = Pipeline([
@@ -982,16 +999,16 @@ class Clasificador():
 
             for j in range (0, len(list(lb.classes_))):
                 label= lb.classes_[j]
-                #nlabel= classifier2.classes_[j]
+
                 prob=probabilidad[i][j]
                 if prob > 0.027:             
                     auxProba.append(str(prob))
-                    auxEti.append(str(label))
+                    auxEti.append(label)
             
             contenido.etiquetas.append(auxEti)
             contenido.probabilidades.append(auxProba)
       
-        print "FIN"
+
         return contenido           
          
     """
@@ -1003,8 +1020,7 @@ class Clasificador():
         
         for i in range (1,len(materiasF)):  
     
-            nuevo=str(materiasF[i])
-            #nuevo=self.Replace(nuevo)
+            nuevo=materiasF[i]
             label.append(nuevo)
     
         return label  

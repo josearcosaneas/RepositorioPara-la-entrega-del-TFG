@@ -19,7 +19,7 @@ Una vez instaladas las dependencias será necesario dar permisos de ejecución
 al archivo "GuiClasificador-V4.py", esto lo podemos hacer 
 bien, desde el terminal:
 
-            sudo chmod +x Aplicacion.py
+            sudo chmod +x GuiClasificador-V4.py
             
 O bien, de manera gráfica accediendo a propiedades, permisos y 
 dando permisos de ejecución.
@@ -28,6 +28,6 @@ Para iniciar la aplicación se puede bien; clicar encima de ella
 e indicando la opción run o run desde terminal, o bien; desde el terminal 
 introduciendo;
 
-        ./Aplicacion.py
+        ./GuiClasificador-V3-5.py
 
 
